@@ -25,7 +25,7 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
     public AnimatedView(Context context) {
         super(context);
         getHolder().addCallback(this);
-        mainThread = new MainThread(getHolder(), this);
+       mainThread = new MainThread(getHolder(), this);
         setFocusable(true);
     }
 
@@ -68,6 +68,12 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
             Paint paint = new Paint();
             projectile.draw(canvas);
             platform.draw(canvas);
+            paint.setColor(Color.rgb(0,255,0));
+            for(int i = 0; i < projectile.numBricks; i++) {
+                if(projectile.bricks[i].getVisibility()) {
+                    canvas.drawRect(projectile.bricks[i].getRect(), paint);
+                }
+            }
 
         }
     }
