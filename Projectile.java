@@ -5,21 +5,26 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.util.Log;
+
+import java.util.Random;
 
 public class Projectile {
     int x;
     int y;
     int r;
-    private int xVelocity = 5;
-    private int yVelocity = 5;
+
     private int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
     private int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
-    public RectF ballRect;
+    Random num = new Random();
+    private int xVelocity = 5;
+    private int yVelocity = 5;
+
     Brick[] bricks = new Brick[50];
     int numBricks = 0;
     int score = 0;
     int lives = 3;
-    Projectile proj;
+    RectF ballRect;
 
     public Projectile(int x1, int y1) {
         x = x1;
@@ -40,39 +45,35 @@ public class Projectile {
         if (x >= screenWidth || x <= 0) {
             xVelocity *= -1;
         }
-        if (y >= 1050 || y <= 0) {
+        if (y <= 0) {
             yVelocity *= -1;
         }
 
-        proj = new Projectile(x, y);
+        ballRect = new RectF(x - 20, y + 20, x + 20, y - 20);
         for(int i = 0; i < numBricks; i++){
             if (bricks[i].getVisibility()){
-                if(intersect(bricks[i].getRect(), proj)) {
-                    bricks[i].setInvisible();
-                    yVelocity *= -1 ;
-                    score++;
+                if(RectF.intersects(bricks[i].getRect(), ballRect)) {
+                    if (ballRect.left < bricks[i].getRect().centerX()) {
+                        xVelocity *= -1;
+                        bricks[i].setInvisible();
+                    }
+                    if (ballRect.right > bricks[i].getRect().centerX()) {
+                        xVelocity *= -1;
+                        bricks[i].setInvisible();
+                    }
+                    else {
+                        bricks[i].setInvisible();
+                        yVelocity *= -1 ;
+                        score++;
+                    }
+
                 }
             }
         }
 
     }
 
-    public boolean intersect(RectF rect, Projectile projectile){
 
-        if((Math.abs(projectile.x -rect.left)< projectile.r || Math.abs(projectile.x -rect.right)< projectile.r ))
-        {
-            if (Math.abs(projectile.y-rect.top)<=projectile.r)//Top right or Top left
-                return true;
-            else if(Math.abs(projectile.y-rect.bottom)<=projectile.r)//Bottom right or bottom left
-                return true;
-            else if((projectile.x-rect.top)<=0 && (projectile.x-rect.bottom)>=0)//Ball has hit the middle of the brick on the right or on the left
-                return true;
-            else return false;
-        }
-
-
-        return false;
-    }
 
     public void draw(Canvas canvas) {
         Paint paint = new Paint();
