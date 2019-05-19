@@ -4,20 +4,28 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.support.annotation.MainThread;
+import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import java.util.ArrayList;
+
+
 public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
-    private ProjectileThread projThread;
-    private PlatformThread platThread;
+    private MainThread mainThread;
+    private Platform platform;
+    private Projectile projectile;
+    boolean touchDown = false;
+    boolean touchStarted = false;
+    float touchX;
+    ArrayList<RectF> bricks = new ArrayList<>();
+
 
     public AnimatedView(Context context) {
         super(context);
         getHolder().addCallback(this);
-        projThread = new ProjectileThread(getHolder(), this);
-        platThread = new PlatformThread(getHolder(), this);
+        mainThread = new MainThread(getHolder(), this);
         setFocusable(true);
     }
 
@@ -28,8 +36,13 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        projThread.setRunning(true);
-        projThread.start();
+        projectile = new Projectile(425, 800);
+        platform = new Platform(375, 1050);
+        mainThread.setRunning(true);
+        mainThread.start();
+
+        //platThread.setRunning(true);
+        //platThread.start();
     }
 
     @Override
@@ -37,8 +50,10 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
         boolean retry = true;
         while (retry) {
             try {
-                projThread.setRunning(false);
-                projThread.join();
+                mainThread.setRunning(false);
+                mainThread.join();
+               // platThread.setRunning(false);
+               // platThread.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -51,28 +66,50 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
         if (canvas != null) {
             canvas.drawColor(Color.WHITE);
             Paint paint = new Paint();
-            paint.setColor(Color.rgb(250, 0, 0));
-            canvas.drawCircle(projThread.x, projThread.y, 20, paint);
-            paint.setColor(Color.rgb(0,0,250));
-            canvas.drawRect(platThread.rect, paint);
+            projectile.draw(canvas);
+            platform.draw(canvas);
+
         }
     }
+
     public boolean onTouchEvent(MotionEvent e) {
+        if (e.getAction() == MotionEvent.ACTION_DOWN) {
+            touchDown = true;
+            touchStarted = true;     // finger JUST went down
+            touchX = e.getX();
+
+            platform.x = touchX;
 
 
-        switch (e.getAction()) {
-
-            case MotionEvent.ACTION_DOWN:
-
-            case MotionEvent.ACTION_MOVE:
-                float x = e.getX();
-                platThread.x = x;
-                break;
         }
+
+        // finger down and dragging
+
+        else if (e.getAction() == MotionEvent.ACTION_MOVE) {
+            touchStarted = false;    // finger has been down for awhile now
+            touchX = e.getX();
+            platform.x = touchX;
+        }
+
+        // finger is up after being down
+
+        else if (e.getAction() == MotionEvent.ACTION_UP) {
+            touchDown = false;       // finger up
+            touchStarted = false;    // so a touch cannot have just been started
+        }
+
+        // unrecognized motion event
+
+        else {
+            return false;
+        }
+
+        // do NOT force a redraw -- just wait for MyThread's next draw call
+
         return true;
     }
     public void update() {
-        projThread.update();
-
+        projectile.update();
+        platform.update();
     }
 }
