@@ -1,19 +1,18 @@
 package cisc181.bustinbricks;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.Log;
-
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
 import java.util.ArrayList;
 
 
@@ -24,7 +23,7 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
     private int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
     private Platform platform;
     Brick[] bricks = new Brick[50];
-    int numBricks = 0;
+    public static int numBricks = 0;
     private Projectile projectile;
     boolean touchDown = false;
     boolean touchStarted = false;
@@ -32,16 +31,20 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
     private Lives life1;
     private Lives life2;
     private Lives life3;
-
+    public static boolean dead = false;
+    public int score = 0;
     ArrayList<Lives> lives = new ArrayList<>();
+    SharedPreferences sharedPref;
+    int level = 0;
 
-//scaled bitmap
+
+    //scaled bitmap
     public AnimatedView(Context context) {
         super(context);
         getHolder().addCallback(this);
         mainThread = new MainThread(getHolder(), this);
         setFocusable(true);
-
+        sharedPref = context.getSharedPreferences("high_score", Context.MODE_PRIVATE);
     }
 
     @Override
@@ -94,26 +97,22 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
     public void draw(Canvas canvas) {
         super.draw(canvas);
         if (canvas != null) {
-            canvas.drawColor(Color.WHITE);
-            Paint paint = new Paint();
-            projectile.draw(canvas);
-            platform.draw(canvas);
-            paint.setColor(Color.rgb(0,255,0));
+            if (dead == false) {
+                canvas.drawColor(Color.WHITE);
+                Paint paint = new Paint();
+                projectile.draw(canvas);
+                platform.draw(canvas);
+                paint.setColor(Color.rgb(0, 255, 0));
 
-            for(int i = 0; i < numBricks; i++) {
-                if(bricks[i].getVisibility()) {
-                    canvas.drawRect(bricks[i].getRect(), paint);
+                for (int i = 0; i < numBricks; i++) {
+                    if (bricks[i].getVisibility()) {
+                        canvas.drawRect(bricks[i].getRect(), paint);
+                    }
+                }
+                for (int i = 0; i < lives.size(); i++) {
+                    lives.get(i).draw(canvas);
                 }
             }
-            for (int i = 0; i < lives.size(); i++) {
-                lives.get(i).draw(canvas);
-            }
-
-
-
-
-
-
         }
     }
 
@@ -174,19 +173,30 @@ public class AnimatedView extends SurfaceView implements SurfaceHolder.Callback{
                         projectile.xVelocity *= -1 ;
                         bricks[i].setInvisible();
                     }
-                    projectile.score++;
+                    score++;
                 }
             }
         }
         if(RectF.intersects(platform.getRect(), ballRect)){
             projectile.yVelocity*=-1;
         }
-        if (projectile.y >= GameActivity.yScreen) {
+        if(projectile.y >= GameActivity.yScreen) {
             lives.remove(lives.size() - 1);
             projectile.x = screenWidth/2;
             projectile.y = (screenHeight*2)/3;
+            if(lives.isEmpty()) {
+                dead = true;
+            }
+        }
+        if (dead) {
+            Intent intent = new Intent(getContext(),ScoreActivity.class);
+            intent.putExtra("Score", score);
+            getContext().startActivity(intent);
+
         }
         projectile.update();
         platform.update();
+
+
     }
 }

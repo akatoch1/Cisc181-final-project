@@ -1,5 +1,6 @@
 package cisc181.bustinbricks;
 
+import android.app.Activity;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.view.SurfaceHolder;
@@ -9,7 +10,6 @@ public class MainThread extends Thread {
     private boolean running;
     public static Canvas canvas;
     private AnimatedView animatedView;
-    private int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
     public MainThread(SurfaceHolder surfaceHolder, AnimatedView animatedView) {
         super();
         this.surfaceHolder = surfaceHolder;
@@ -26,10 +26,9 @@ public class MainThread extends Thread {
     @Override
     public void run() {
         while (running) {
-            canvas = null;
-
+            canvas = this.surfaceHolder.lockCanvas();
             try {
-                canvas = this.surfaceHolder.lockCanvas();
+
                 synchronized(surfaceHolder) {
                     this.animatedView.update();
                     this.animatedView.draw(canvas);
